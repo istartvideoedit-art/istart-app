@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src *; frame-src *; img-src * data: blob:;">
+<title>iSTART 影片製作協作平台</title>
+<meta name="version" content="20260605120000">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;height:100vh;overflow:hidden;background:#f0ece6;color:#111}
+
+/* ── Topbar ── */
+.topbar{height:52px;background:#111;border-bottom:1px solid #222;display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{font-size:17px;font-weight:700;letter-spacing:3px;color:#fff;padding-left:2px}
+.brand-sub{color:#666 !important}
+.brand-sub{font-size:11px;color:#666;flex:1}
+.tbtn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:7px;border:1px solid #333;background:#222;color:#ccc;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .12s}
+.tbtn:hover{background:#333}
+.tbtn.dark{background:#fff;border-color:#fff;color:#111}
+.tbtn.dark:hover{background:#eee}
+.sync-wrap{display:flex;align-items:center;gap:5px;font-size:11px;color:#888}
+.sdot{width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0}
+.sdot.ok{background:#34c759;animation:pulse 2.5s infinite}
+.sdot.err{background:#ff3b30}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── Layout ── */
+.layout{display:flex;height:calc(100vh - 52px);overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{width:220px;min-width:220px;background:#f5f0e8;border-right:1px solid #e0d8cc;display:flex;flex-direction:column;overflow-y:auto;transition:width .2s,min-width .2s;position:relative;flex-shrink:0}
+.sidebar.col{width:48px;min-width:48px;overflow:hidden}
+.sidebar.col .hc{display:none}
+.sb-toggle{position:absolute;right:-11px;top:14px;width:22px;height:22px;border-radius:50%;background:#fff;border:1px solid #e0e0e0;color:#bbb;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.sb-toggle:hover{color:#555;border-color:#bbb}
+.sb-section{padding:16px 16px 6px;font-size:10px;color:#bbb;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
+.sb-add{width:18px;height:18px;border-radius:4px;background:#f5f5f5;border:1px solid #e8e8e8;color:#aaa;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .12s}
+.sb-add:hover{background:#eee;color:#333}
+.proj-item{padding:8px 12px;cursor:pointer;border-radius:8px;margin:2px 8px;border-left:2px solid transparent;transition:background .12s}
+.proj-item:hover{background:#f0ece6}
+.proj-item.active{background:#f0f0f0;border-left-color:#111}
+.proj-name{font-size:13px;font-weight:500;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proj-item.active .proj-name{color:#111;font-weight:600}
+.proj-tags{display:flex;gap:3px;margin-top:3px}
+.tag{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:500}
+.tag.pre{background:#e8f2ff;color:#1a5abf}
+.tag.mid{background:#f0e8ff;color:#6a2ab0}
+.tag.post{background:#ffe8e8;color:#b02a2a}
+.tag.cli{background:#f5f5f5;color:#999}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#f0ece6;min-width:0}
+
+/* ── Project header ── */
+.proj-header{background:#f5f0e8;border-bottom:1px solid #e0d8cc;padding:14px 22px 0;flex-shrink:0}
+.proj-title-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.proj-title{font-size:18px;font-weight:700;color:#111;letter-spacing:-.3px}
+.proj-client{font-size:12px;color:#aaa;margin-bottom:10px}
+.tabs{display:flex;gap:0;overflow-x:auto}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:9px 16px;font-size:13px;color:#aaa;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;user-select:none;transition:color .12s;font-weight:500}
+.tab:hover{color:#555}
+.tab.active{color:#111;border-bottom-color:#111;font-weight:600}
+.tab-badge{background:#f0f0f0;color:#aaa;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:4px}
+.tab.active .tab-badge{background:#111;color:#fff}
+
+/* ── Tab body ── */
+.tab-body{flex:1;overflow-y:auto;padding:20px 22px}
+
+/* ── Filter bar ── */
+.filter-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.filter-chip{padding:5px 13px;border-radius:20px;border:1px solid #e0e0e0;background:#fff;color:#555;font-size:12px;cursor:pointer;transition:all .12s;font-weight:500}
+.filter-chip:hover{border-color:#bbb}
+.filter-chip.active{background:#111;border-color:#111;color:#fff}
+
+/* ── Section header ── */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-size:13px;font-weight:700;color:#333;letter-spacing:-.1px}
+
+/* ── Media Grid ── */
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,460px);gap:16px;margin-bottom:20px;align-items:start;justify-content:start}.media-grid>.mc{align-self:start}
+
+/* ── Media Card ── */
+.mc{background:#fdf8f0;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);transition:box-shadow .2s,transform .2s;cursor:pointer}
+.mc:hover{box-shadow:0 4px 12px rgba(0,0,0,.1),0 12px 32px rgba(0,0,0,.1);transform:translateY(-2px)}
+.mc-body{display:block;overflow:hidden;background:#f0f0f0;position:relative}
+.mc-body > *{width:100%}
+.mc-head{padding:12px 16px;background:#fdf8f0;border-top:1px solid #ede8e0}
+.mc-title{font-size:15px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.mc-meta{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.mc-url{font-size:12px;color:#999;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none}
+.mc-url:hover{color:#1a6abf}
+.mc-note{font-size:12px;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.mc-badge{font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;flex-shrink:0}
+.mc-actions{display:flex;gap:4px;margin-top:6px;justify-content:flex-end}
+
+/* Badges */
+.byt{background:#fff0f0;color:#e03030}
+.bdr{background:#eef5ff;color:#1a5abf}
+.bsl{background:#fff4ec;color:#c04010}
+.bfb{background:#eef0ff;color:#3b5998}
+.big{background:#fce8f8;color:#c13584}
+.bth{background:#f0f0f0;color:#444}
+.bimg{background:#eefff4;color:#1a7340}
+.bembed{background:#f0eeff;color:#5030c0}
+.blnk{background:#f5f5f5;color:#888}
+
+/* ── Video/embed bodies ── */
+.vid16x9{position:relative;width:100%;padding-bottom:56.25%;background:#000;overflow:hidden}
+.vid9x16{position:relative;width:100%;padding-bottom:177.78%;background:#000;overflow:hidden}
+.vid9x16 iframe,.vid9x16 a{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
+.vid16x9 iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
+.media-grid-portrait{grid-template-columns:repeat(auto-fill,460px)}
+.slides16x9{position:relative;width:100%;padding-bottom:64%;background:#fff;overflow:hidden;max-height:450px}
+.slides16x9 iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
+.img-body{background:#f0f0f0;overflow:hidden;min-height:200px;display:flex;align-items:center;justify-content:center}
+.img-body img{width:100%;max-height:400px;object-fit:contain;display:block}
+.social-body{background:#f8f9fa;padding:20px 16px;display:flex;align-items:center;gap:12px;min-height:160px;max-height:220px}
+.social-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.si-fb{background:#1877f2}
+.si-ig{background:linear-gradient(135deg,#f09433,#dc2743,#bc1888)}
+.si-th{background:#000;color:#fff}
+.social-info{flex:1;min-width:0}
+.social-label{font-size:11px;font-weight:600;margin-bottom:3px}
+.social-url{font-size:11px;color:#666;word-break:break-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ── Btn ── */
+.btn{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:7px;border:1px solid #e0e0e0;background:#fff;color:#444;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:none;white-space:nowrap;transition:all .12s;font-weight:500}
+.btn:hover{background:#f5f5f7;border-color:#bbb}
+.btn.primary{background:#111;border-color:#111;color:#fff}
+.btn.primary:hover{background:#333}
+.btn.green{background:#1a7340;border-color:#1a7340;color:#fff}
+.btn.green:hover{background:#145a30}
+.btn.sm{padding:3px 8px;font-size:11px;border-radius:5px}
+.btn.danger{color:#e03030;border-color:#fcc}
+.btn.danger:hover{background:#fff5f5}
+
+/* ── Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat-card{background:#faf7f3;border-radius:12px;padding:14px 16px;border:1px solid #e8e2d9}
+.stat-label{font-size:10px;color:#aaa;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.stat-val{font-size:24px;font-weight:700;color:#111}
+.prog-bg{background:#f0f0f0;border-radius:20px;height:6px;overflow:hidden;margin:8px 0}
+.prog{height:100%;border-radius:20px}
+
+/* ── Notice ── */
+.notice{background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:9px 13px;font-size:12px;color:#999;margin-bottom:12px}
+
+/* ── Card generic ── */
+.card{background:#faf7f3;border-radius:12px;overflow:hidden;margin-bottom:12px;border:1px solid #e8e2d9}
+.empty{text-align:center;padding:40px;color:#ccc;font-size:13px}
+
+/* ── Sheets ── */
+.sheets-frame{width:100%;height:calc(100vh - 240px);min-height:400px;border:none;display:block}
+
+/* ── Modal ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:520px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden}
+.mhd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f0f0f0}
+.mhd-title{font-size:15px;font-weight:700;color:#111}
+.mbody{padding:18px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.mfoot{padding:12px 20px;border-top:1px solid #f0f0f0;display:flex;justify-content:flex-end;gap:8px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.06em}
+.fg input,.fg select,.fg textarea{padding:9px 11px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:13px;color:#111;font-family:inherit;background:#fff;transition:border-color .12s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:#111}
+.fg textarea{min-height:60px;resize:vertical}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── Empty state ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;color:#ccc}
+.empty-state p{font-size:14px;color:#bbb}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-track{background:#f0ece6}
+::-webkit-scrollbar-thumb{background:#ddd;border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:#bbb}
+
+/* ── Sheets Side Panel ── */
+#sheets-panel{position:fixed;top:0;right:-100%;width:55%;height:100%;background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,.18);z-index:500;transition:right .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+#sheets-panel.open{right:0}
+#sheets-panel-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1a1a2e;color:#fff;flex-shrink:0}
+#sheets-panel-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;margin-right:12px}
+#sheets-panel iframe{flex:1;border:none;width:100%;height:100%}
+#sheets-panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:499;display:none}
+#sheets-panel-overlay.open{display:block}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <span class="brand">iSTART</span>
+  <span class="brand-sub">影片製作協作平台</span>
+  <div class="sync-wrap"><span class="sdot" id="sdot"></span><span id="slbl">連線中...</span></div>
+  <button class="tbtn" onclick="exportJSON()">⬇ 備份</button>
+  <label class="tbtn" style="cursor:pointer">⬆ 還原<input type="file" accept=".json" onchange="importJSON(event)" style="display:none"></label>
+  <button class="tbtn dark" onclick="openNewProj()">＋ 新增專案</button>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <button class="sb-toggle" id="sb-toggle" onclick="toggleSidebar()">◀</button>
+    <div class="sb-label hc">PROJECTS <button class="sb-add" onclick="openNewProj()">+</button></div>
+    <div id="proj-list"><div class="empty hc" id="proj-loading" style="padding:20px;font-size:12px">載入中...</div></div>
+  </div>
+
+  <!-- Main -->
+  <div class="main" id="main">
+    <div class="empty-state">
+      <div style="font-size:40px">🎬</div>
+      <p>請從左側選擇專案，或建立新專案</p>
+      <button class="btn primary" onclick="openNewProj()">＋ 建立新專案</button>
+    </div>
+  </div>
+</div>
+
+<!-- Project Modal -->
+<div class="overlay" id="proj-overlay">
+  <div class="modal" style="width:490px">
+    <div class="mhd"><span class="mhd-title" id="proj-mtitle">新增專案</span><button class="btn sm" onclick="closeProjModal()">✕</button></div>
+    <div class="mbody">
+      <div class="fg"><label>專案名稱 *</label><input id="pm-name" placeholder="例：登陽康橋景美"></div>
+      <div class="fg2">
+        <div class="fg"><label>客戶名稱</label><input id="pm-client" placeholder="例：登陽"></div>
+        <div class="fg"><label>製作階段</label>
+          <select id="pm-stage"><option value="pre">前期</option><option value="mid">製作中</option><option value="post">後製</option></select>
+        </div>
+      </div>
+      <div class="fg"><label>分鏡腳本 Sheets 網址</label><input id="pm-sheets" placeholder="Google Sheets 分享連結"></div>
+      <div class="fg"><label>修改意見 Sheets 網址（可與分鏡不同）</label><input id="pm-sheets2" placeholder="Google Sheets 分享連結"></div>
+      <div class="fg"><label>備註</label><textarea id="pm-note" placeholder="其他說明..."></textarea></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeProjModal()">取消</button>
+      <button class="btn primary" onclick="saveProj()">✓ 儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Item Modal -->
+<div class="overlay" id="item-overlay">
+  <div class="modal">
+    <div class="mhd"><span class="mhd-title" id="item-mtitle">新增項目</span><button class="btn sm" onclick="closeItemModal()">✕</button></div>
+    <div class="mbody" id="item-mbody"></div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeItemModal()">取消</button>
+      <button class="btn primary" onclick="saveItem()">✓ 儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- File Location Modal -->
+<div class="overlay" id="fileloc-overlay">
+  <div class="modal" style="width:520px">
+    <div class="mhd"><span class="mhd-title" id="fl-mtitle">新增檔案位置</span><button class="btn sm" onclick="closeFileLocModal()">✕</button></div>
+    <div class="mbody">
+      <div class="fg"><label>標題 *</label><input id="fl-title" placeholder="例：A 棟外觀空拍素材"></div>
+      <div class="fg"><label>路徑 *</label><input id="fl-path" placeholder="例：D:\Projects\2026\xxx  或  \\server\shared\xxx"></div>
+      <div class="fg"><label>備註</label><input id="fl-note" placeholder="說明此位置存放內容"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="closeFileLocModal()">取消</button>
+      <button class="btn primary" onclick="saveFileLoc()">✓ 儲存</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, onValue, set, remove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ── Firebase ──
+const firebaseConfig = {
+  apiKey: "AIzaSyD_pvNdzPvT85hdHEqAmMlf38c8M0Cmds8",
+  authDomain: "istart-co-work.firebaseapp.com",
+  databaseURL: "https://istart-co-work-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "istart-co-work",
+  storageBucket: "istart-co-work.firebasestorage.app",
+  messagingSenderId: "486290279934",
+  appId: "1:486290279934:web:cd3b68b03562e8cd99c4af"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+const projRef = ref(db, 'projects');
+
+// ── Global state (window = accessible from inline onclick) ──
+window.projects     = {};
+window.currentProjId = null;
+window.currentTab   = 'overview';
+window.addCtx       = {};
+window._editProjId  = null;
+window._editIdx     = null;
+
+// ── Sync indicator ──
+function syncDot(s) {
+  const d = document.getElementById('sdot');
+  const l = document.getElementById('slbl');
+  d.className = 'sdot' + (s==='ok'?' ok':s==='err'?' err':'');
+  l.textContent = s==='ok'?'已同步':s==='err'?'連線失敗':'連線中...';
+}
+onValue(projRef, snap => {
+  window.projects = snap.val() || {};
+  syncDot('ok');
+  renderSidebar();
+  if (window.currentProjId && window.projects[window.currentProjId])
+    renderProject(window.projects[window.currentProjId]);
+}, err => {
+  console.error('Firebase onValue error:', err);
+  syncDot('err');
+});
+
+// If not connected in 5s, show error and retry
+setTimeout(() => {
+  const lbl = document.getElementById('slbl');
+  if (lbl && lbl.textContent === '連線中...') {
+    syncDot('err');
+  }
+}, 5000);
+
+async function persist(id, data) { await set(ref(db,'projects/'+id), data); }
+
+// ── Helpers ──
+function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+function stageLabel(s) { return {pre:'前期',mid:'製作中',post:'後製'}[s]||s; }
+function stageClass(s) { return {pre:'pre',mid:'mid',post:'post'}[s]||'pre'; }
+function extractSheetsId(url) {
+  if (!url) return '';
+  const m = url.match(/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : url.trim();
+}
+function extractYTId(url) {
+  if (!url) return null;
+  for (const re of [/youtu\.be\/([^?&\s]+)/,/[?&]v=([^&\s]+)/,/embed\/([^?&\s]+)/,/shorts\/([^?&\s]+)/]) {
+    const m = url.match(re); if (m) return m[1];
+  }
+  return null;
+}
+function extractDriveId(url) {
+  if (!url) return null;
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  return m2 ? m2[1] : null;
+}
+function isFolderUrl(url) {
+  return url && (url.includes('/drive/folders/') || url.includes('/drive/u/'));
+}
+
+// ── Badge info ──
+function badgeInfo(type) {
+  const map = {
+    youtube:  {cls:'byt', label:'YouTube'},
+    drive:    {cls:'bdr', label:'Drive'},
+    slides:   {cls:'bsl', label:'Slides'},
+    facebook: {cls:'bfb', label:'Facebook'},
+    instagram:{cls:'big', label:'Instagram'},
+    threads:  {cls:'bth', label:'Threads'},
+    image:    {cls:'bdr', label:'圖片'},
+  };
+  const extra = {embed:{cls:'bfb',label:'嵌入'}};
+  return map[type] || extra[type] || {cls:'blnk', label:'連結'};
+}
+
+// ── Core: render media body ──
+// Returns HTML string for the body of a media card
+function renderMediaBody(item) {
+  const url    = item.url || '';
+  const type   = item.type || 'link';
+  const orient = item.orientation || 'landscape';
+
+  // 1. Google Slides — detect by type OR by URL pattern
+  const isSlidesUrl = url.includes('docs.google.com/presentation');
+  if (type === 'slides' || isSlidesUrl) {
+    const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (!m) return linkCard('📄', 'Google Slides', url, '點此開啟');
+    const embedSrc = `https://docs.google.com/presentation/d/${m[1]}/embed?start=false&loop=false&delayms=3000`;
+    return `<div class="slides16x9"><iframe src="${embedSrc}" allowfullscreen></iframe></div>`;
+  }
+
+  // 2. YouTube — detect by type OR URL pattern
+  const isYTUrl = url.includes('youtube.com') || url.includes('youtu.be');
+  if (type === 'youtube' || isYTUrl) {
+    const id = extractYTId(url);
+    if (!id) return linkCard('▶', 'YouTube', url, '無法解析連結，點此開啟');
+    const src = `https://www.youtube.com/embed/${id}?rel=0`;
+    return `<div class="vid16x9"><iframe src="${src}" allowfullscreen allow="autoplay;encrypted-media;picture-in-picture"></iframe></div>`;
+  }
+
+  // 3. Google Drive (video / file)
+  const isDriveUrl = url.includes('drive.google.com') && !isSlidesUrl;
+  if (type === 'drive' || isDriveUrl) {
+    if (isFolderUrl(url)) {
+      return `<div class="folder-card">
+        <span style="font-size:28px">📁</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;color:#888;margin-bottom:3px">Google Drive 資料夾</div>
+          <a href="${url}" target="_blank" style="font-size:12px;color:#1a6abf;word-break:break-all">${url.length>60?url.slice(0,60)+'…':url}</a>
+        </div>
+        <a href="${url}" target="_blank" class="btn sm">開啟 ↗</a>
+      </div>`;
+    }
+    const id = extractDriveId(url);
+    if (!id) return linkCard('📁', 'Google Drive', url, '請使用「共用」→「複製連結」格式');
+    const src = `https://drive.google.com/file/d/${id}/preview`;
+    return `<div class="vid16x9"><iframe src="${src}" allowfullscreen allow="autoplay;fullscreen"></iframe></div>`;
+  }
+
+  // 4. Image
+  if (type === 'image') {
+    const driveId = extractDriveId(url);
+    if (driveId) {
+      const previewSrc = `https://drive.google.com/file/d/${driveId}/preview`;
+      return `<div class="vid16x9"><iframe src="${previewSrc}" allowfullscreen allow="autoplay"></iframe></div>`;
+    }
+    return `<div class="img-body"><img src="${url}" onerror="this.parentElement.innerHTML='<div style=padding:14px;color:#aaa;font-size:12px>⚠ 圖片無法載入</div>'"></div>`;
+  }
+
+  // 5. Facebook — social thumbnail card
+  if (type === 'facebook') {
+    // Check if it's a share URL (cannot be embedded)
+    const isShareUrl = url.includes('/share/');
+    if (isShareUrl) {
+      return `<div style="background:#f0f2f5;padding:14px 16px">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="width:44px;height:44px;border-radius:10px;background:#1877f2;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <span style="color:#fff;font-weight:700;font-size:20px">f</span>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;color:#1877f2;margin-bottom:4px">Facebook 影片</div>
+            <div style="font-size:11px;color:#555;line-height:1.6;margin-bottom:8px">
+              ⚠ 分享連結（/share/）無法嵌入。請取得原始影片網址：<br>
+              1. 打開 Facebook 影片<br>
+              2. 點右上角 ⋯ → 「複製連結」<br>
+              3. 或從瀏覽器網址列複製（格式如 facebook.com/頁面/videos/ID）
+            </div>
+            <a href="${url}" target="_blank" style="font-size:11px;color:#1877f2">點此開啟影片 ↗</a>
+          </div>
+        </div>
+      </div>`;
+    }
+    // Direct video/post URL - use xfbml SDK
+    const isVideo = url.includes('/videos/') || url.includes('/reel/') || url.includes('video.php');
+    const fbSrc = isVideo
+      ? `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false&width=640`
+      : `https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(url)}&show_text=true&width=640`;
+    return `<div class="vid16x9"><iframe src="${fbSrc}" allowfullscreen scrolling="no" allow="autoplay;clipboard-write;encrypted-media;picture-in-picture;web-share"></iframe></div>`;
+  }
+
+  // 6. Instagram
+  if (type === 'instagram') {
+    // Extract post/reel ID and use embed endpoint
+    const igMatch = url.match(/\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
+    if (igMatch) {
+      const igSrc = `https://www.instagram.com/p/${igMatch[1]}/embed/captioned/`;
+      return `<div class="vid16x9"><iframe src="${igSrc}" allowfullscreen scrolling="no" allow="autoplay;clipboard-write;encrypted-media;picture-in-picture;web-share"></iframe></div>`;
+    }
+    return `<div class="vid16x9" style="background:#fce8f8"><iframe src="about:blank" style="display:none"></iframe>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px">
+        <div class="social-icon si-ig" style="width:44px;height:44px"><span>📷</span></div>
+        <div style="font-size:13px;font-weight:600;color:#c13584">Instagram</div>
+        <a href="${url}" target="_blank" style="font-size:11px;color:#c13584;word-break:break-all;text-align:center;padding:0 20px;max-width:100%">${url}</a>
+        <a href="${url}" target="_blank" class="btn sm" style="background:#c13584;border-color:#c13584;color:#fff">開啟 ↗</a>
+      </div>
+    </div>`;
+  }
+  if (type === 'threads') {
+    // Threads: click to open (no reliable embed API)
+    const shortU = url.length>50 ? url.slice(0,50)+'…' : url;
+    return `<div class="vid16x9" style="background:#0f0f0f;cursor:pointer" onclick="window.open('${url}','_blank')">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+        <svg width="40" height="40" viewBox="0 0 192 192" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M141.537 88.988a66.667 66.667 0 0 0-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.229c8.249.053 14.474 2.452 18.503 7.129 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.371-39.134 15.264-38.105 34.568.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.35-22.809-.169-40.06-7.484-51.275-21.742C35.236 139.966 29.808 120.682 29.605 96c.203-24.682 5.631-43.966 16.133-57.317C56.954 24.425 74.205 17.11 97.014 16.941c22.975.17 40.526 7.52 52.171 21.848 5.71 7.025 9.986 15.908 12.775 26.524l16.147-4.32c-3.384-12.782-8.584-23.658-15.537-32.479C147.725 10.655 125.957 1.073 97.07.86h-.114C68.19 1.073 46.677 10.611 31.909 28.412 18.708 44.34 11.93 66.412 11.696 95.985v.03c.234 29.573 7.012 51.645 20.213 67.574 14.768 17.8 36.281 27.338 65.157 27.551h.114c25.882-.191 44.161-6.967 59.236-22.024 19.09-19.071 18.516-43.044 12.219-57.747-4.458-10.391-13.017-18.879-26.098-24.381Z"/></svg>
+        <div style="font-size:13px;font-weight:600;color:#fff">Threads</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.6);text-align:center;padding:0 20px">${shortU}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5)">點擊開啟</div>
+      </div>
+    </div>`;
+  }
+
+  // Embed type: user pastes iframe src from FB/IG/Threads official embed code
+  if (type === 'embed') {
+    return `<div class="vid16x9"><iframe src="${url}" allowfullscreen scrolling="no" allow="autoplay;clipboard-write;encrypted-media;picture-in-picture;web-share"></iframe></div>`;
+  }
+
+  // 8. Generic link
+  return linkCard('🔗', item.title||'連結', url, url.length>60?url.slice(0,60)+'…':url);
+}
+
+function socialCard(platform, label, url) {
+  const iconClass = {fb:'si-fb',ig:'si-ig',th:'si-th'}[platform]||'si-th';
+  const iconText  = {fb:'<span style="color:#fff;font-weight:700;font-size:16px">f</span>', ig:'📷', th:'🧵'}[platform]||'🔗';
+  return `<div class="social-body">
+    <div class="social-icon ${iconClass}">${iconText}</div>
+    <div class="social-info">
+      <div class="social-label">${label}</div>
+      <a class="social-url" href="${url}" target="_blank">${url}</a>
+    </div>
+    <a href="${url}" target="_blank" class="btn sm">開啟 ↗</a>
+  </div>`;
+}
+
+function linkCard(icon, title, url, sub) {
+  return `<div class="social-body">
+    <div style="font-size:28px;flex-shrink:0">${icon}</div>
+    <div class="social-info">
+      <div class="social-label">${title}</div>
+      <a href="${url}" target="_blank" class="social-url">${sub||url}</a>
+    </div>
+    <a href="${url}" target="_blank" class="btn sm">開啟 ↗</a>
+  </div>`;
+}
+
+// ── Build full media card HTML ──
+// ── Refs sorted by orientation ──
+function emptyCard(msg) {
+  return '<div class="card"><div class="empty">' + msg + '</div></div>';
+}
+
+function isPortraitCard(item) {
+  if (item.orient === 'portrait') return true;
+  if (item.orient === 'landscape') return false;
+  return false;
+}
+
+function renderRefsSorted(refs, pid) {
+  const landscape = refs.map((r,i)=>({r,i})).filter(({r})=>!isPortraitCard(r));
+  const portrait  = refs.map((r,i)=>({r,i})).filter(({r})=> isPortraitCard(r));
+  let html = '';
+  if (landscape.length) {
+    html += `<div style="margin-bottom:6px;font-size:11px;font-weight:600;color:#aaa;letter-spacing:.05em">橫式</div>`;
+    html += `<div class="media-grid" style="margin-bottom:20px">${landscape.map(({r,i})=>mediaCard(r,i,pid,'refs')).join('')}</div>`;
+  }
+  if (portrait.length) {
+    html += `<div style="margin-bottom:6px;font-size:11px;font-weight:600;color:#aaa;letter-spacing:.05em">直式</div>`;
+    html += `<div class="media-grid media-grid-portrait" style="margin-bottom:20px">${portrait.map(({r,i})=>mediaCard9x16(r,i,pid,'refs')).join('')}</div>`;
+  }
+  return html;
+}
+
+function mediaCardPortrait(item, i, pid) {
+  const info = badgeInfo(item.type || 'link');
+  const shortUrl = (item.url||'').length>50 ? item.url.slice(0,50)+'…' : (item.url||'');
+  const u = item.url || '';
+  let body = '';
+  const igMatch = u.match(/instagram\.com\/(?:p|reel)\/([A-Za-z0-9_\-]+)/);
+  if (igMatch) {
+    body = `<div style="position:relative;width:100%;padding-bottom:125%;overflow:hidden;background:#000">
+      <iframe src="https://www.instagram.com/p/${igMatch[1]}/embed/" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" scrolling="no" allowtransparency="true"></iframe>
+    </div>`;
+  } else {
+    const bgColor = u.includes('facebook.com') ? '#1877f2' : (u.includes('threads.net')||u.includes('threads.com')) ? '#111' : '#333';
+    const icon = u.includes('facebook.com') ? 'f' : (u.includes('threads.net')||u.includes('threads.com')) ? '𝕋' : '▶';
+    body = `<a href="${u}" target="_blank" style="display:block;position:relative;width:100%;padding-bottom:125%;background:${bgColor};text-decoration:none;overflow:hidden">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+        <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff">${icon}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.8);text-align:center;padding:0 16px;word-break:break-all">${shortUrl}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.6)">點擊開啟</div>
+      </div>
+    </a>`;
+  }
+  return `<div class="mc">
+    <div class="mc-body">${body}</div>
+    <div class="mc-head">
+      <div class="mc-title">${item.title||'（未命名）'}</div>
+      <div class="mc-meta">
+        <a class="mc-url" href="${item.url||'#'}" target="_blank">${shortUrl}</a>
+        ${item.note?`<span class="mc-note">${item.note}</span>`:''}
+        <span class="mc-badge ${info.cls}">${info.label}</span>
+      </div>
+      <div class="mc-actions">
+        <a href="${item.url||'#'}" target="_blank" class="btn sm">↗</a>
+        <button class="btn sm" onclick="editSubItem('${pid}','refs',${i})">✎</button>
+        <button class="btn sm danger" onclick="deleteSubItem('${pid}','refs',${i})">✕</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function mediaCard9x16(item, i, pid, arr) {
+  // Generate normal card then replace aspect ratio class
+  const card = mediaCard(item, i, pid, arr);
+  return card.replace(/class="vid16x9"/g, 'class="vid9x16"');
+}
+
+function mediaCard(item, i, pid, arr) {
+  // Safety: if item is malformed, show minimal delete card
+  if (!item || typeof item !== 'object') {
+    return `<div class="mc">
+      <div class="social-body" style="background:#fff5f5">
+        <div style="font-size:28px">⚠</div>
+        <div class="social-info"><div class="social-label" style="color:#c00">資料損毀</div></div>
+        <button class="btn sm danger" onclick="deleteSubItem('${pid}','${arr}',${i})">✕ 刪除</button>
+      </div>
+    </div>`;
+  }
+  // Override type based on URL - always trust URL over stored type
+  const u = item.url || '';
+  if (arr === 'scripts') {
+    item = {...item, type:'slides'};
+  } else if (u.includes('docs.google.com/presentation')) {
+    item = {...item, type:'slides'};
+  } else if (u.includes('youtube.com/watch') || u.includes('youtu.be/') || u.includes('youtube.com/shorts')) {
+    item = {...item, type:'youtube'};
+  } else if (u.includes('drive.google.com')) {
+    item = {...item, type: u.includes('/folders/') ? 'drive_folder' : 'drive'};
+  } else if (u.includes('facebook.com')) {
+    item = {...item, type:'facebook'};
+  } else if (u.includes('instagram.com')) {
+    item = {...item, type:'instagram'};
+  } else if (u.includes('threads.net')||u.includes('threads.com')) {
+    item = {...item, type:'threads'};
+  } else if (item.type === 'youtube' || item.type === 'slides' || item.type === 'drive') {
+    // Stored type doesn't match URL - reset to generic link
+    item = {...item, type:'link'};
+  }
+  const info     = badgeInfo(item.type);
+  const shortUrl = (item.url||'').length>50 ? item.url.slice(0,50)+'…' : (item.url||'');
+  return `
+  <div class="mc">
+    <div class="mc-body">${renderMediaBody(item)}</div>
+    <div class="mc-head">
+      <div class="mc-title">${item.title||'（未命名）'}</div>
+      <div class="mc-meta">
+        <a class="mc-url" href="${item.url||'#'}" target="_blank">${shortUrl}</a>
+        ${item.note?`<span class="mc-note">${item.note}</span>`:''}
+        <span class="mc-badge ${info.cls}">${info.label}</span>
+      </div>
+      <div class="mc-actions">
+        <a href="${item.url||'#'}" target="_blank" class="btn sm">↗</a>
+        <button class="btn sm" onclick="editSubItem('${pid}','${arr}',${i})">✎</button>
+        <button class="btn sm danger" onclick="deleteSubItem('${pid}','${arr}',${i})">✕</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Sidebar ──
+window.renderSidebar = function() {
+  const el   = document.getElementById('proj-list');
+  const list = Object.values(window.projects).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if (!list.length) {
+    el.innerHTML = `<div class="empty hc" style="padding:20px;font-size:12px">尚無專案</div>`;
+    return;
+  }
+  el.innerHTML = list.map(p=>`
+    <div class="proj-item${p.id===window.currentProjId?' active':''}" onclick="selectProject('${p.id}')">
+      <div class="proj-name hc">${p.name}</div>
+      <div class="proj-tags hc">
+        <span class="tag ${stageClass(p.stage)}">${stageLabel(p.stage)}</span>
+        ${p.client?`<span class="tag cli">${p.client}</span>`:''}
+      </div>
+    </div>`).join('');
+}
+
+window.selectProject = function(id) {
+  window.currentProjId = id;
+  window.currentTab    = 'overview';
+  renderSidebar();
+  renderProject(window.projects[id]);
+}
+
+// ── Project view ──
+window.renderProject = function(p) {
+  if (!p) return;
+  const tabs = [
+    {id:'overview',    label:'📊 進度'},
+    {id:'pre',         label:'前期製作'},
+    {id:'storyboard',  label:'特效AI分鏡cut'},
+    {id:'revision',    label:'修改意見'},
+    {id:'final',       label:'完成影片'},
+  ];
+  const cnt = {
+    overview:'',
+    pre:        (p.scripts||[]).length+(p.refs||[]).length,
+    storyboard: p.sheetsId  ? '↗':'—',
+    revision:   (p.sheetsId2||p.sheetsId) ? '↗':'—',
+    final:      (p.finals||[]).length,
+  };
+  document.getElementById('main').innerHTML = `
+    <div class="proj-header">
+      <div class="proj-title-row">
+        <span class="proj-title">${p.name}</span>
+        <span class="tag ${stageClass(p.stage)}">${stageLabel(p.stage)}</span>
+        <button class="btn sm" onclick="openEditProj('${p.id}')" style="margin-left:auto">✎ 編輯</button>
+        <button class="btn sm danger" onclick="deleteProj('${p.id}')">✕ 刪除</button>
+      </div>
+      <div class="proj-client">客戶：${p.client||'—'}</div>
+      <div class="tabs">${tabs.map(t=>`
+        <div class="tab${window.currentTab===t.id?' active':''}" onclick="switchTab('${t.id}')">
+          ${t.label}${cnt[t.id]!==''?`<span class="tab-badge">${cnt[t.id]}</span>`:''}
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="tab-body" id="tab-body"></div>`;
+  renderTab();
+}
+
+window.switchTab = function(tab) {
+  window.currentTab = tab;
+  document.querySelectorAll('.tab').forEach(el => {
+    const map = {overview:'📊',pre:'前期',storyboard:'特效',revision:'修改',final:'完成'};
+    el.classList.toggle('active', el.textContent.trim().startsWith(map[tab]||tab));
+  });
+  renderTab();
+}
+
+function renderTab() {
+  const p  = window.projects[window.currentProjId];
+  const el = document.getElementById('tab-body');
+  if (!p || !el) return;
+  const t = window.currentTab;
+  // Save scroll position before render
+  const scrollEl = document.getElementById('tab-body');
+  const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+  if      (t==='overview')   el.innerHTML = renderOverview(p);
+  else if (t==='pre')        el.innerHTML = renderPre(p);
+  else if (t==='storyboard') el.innerHTML = renderStoryboard(p);
+  else if (t==='revision')   el.innerHTML = renderRevision(p);
+  else if (t==='final')      el.innerHTML = renderFinal(p);
+  // Restore scroll position after render
+  requestAnimationFrame(() => { if (scrollEl) scrollEl.scrollTop = scrollTop; });
+}
+
+// ── Overview ──
+function renderOverview(p) {
+  const revs   = p.revisions||[];
+  const finals = p.finals||[];
+  const sc     = {pending:0,inprogress:0,done:0,confirmed:0};
+  revs.forEach(r => sc[r.status||'pending']++);
+  const total = revs.length;
+  const done  = sc.done+sc.confirmed;
+  const pct   = total ? Math.round(done/total*100) : 0;
+  const scol  = {pre:'#4a9eda',mid:'#a070d8',post:'#d07060'};
+  return `
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">製作階段</div><div class="stat-val" style="font-size:17px;color:${scol[p.stage]||'#333'}">${stageLabel(p.stage)}</div></div>
+    <div class="stat-card"><div class="stat-label">腳本數量</div><div class="stat-val">${(p.scripts||[]).length}</div></div>
+    <div class="stat-card"><div class="stat-label">修改意見</div><div class="stat-val">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">完成影片</div><div class="stat-val">${finals.length}</div></div>
+  </div>
+  ${total>0?`
+  <div class="card" style="padding:16px;margin-bottom:14px;background:#faf7f3">
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+      <span style="font-weight:600;color:#444">修改進度</span>
+      <span style="color:#888">${done}/${total}（${pct}%）</span>
+    </div>
+    <div class="prog-bg"><div class="prog" style="width:${pct}%;background:${pct===100?'#4caf82':'#4a9eda'}"></div></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">
+      ${[['pending','待修改','#f0c040'],['inprogress','修改中','#4a9eda'],['done','已完成','#4caf82'],['confirmed','已確認','#a070d8']].map(([k,l,c])=>`
+      <div style="text-align:center;padding:8px;background:#fafafa;border-radius:6px;border:1px solid #eee">
+        <div style="font-size:18px;font-weight:600;color:${c}">${sc[k]}</div>
+        <div style="font-size:11px;color:#aaa">${l}</div>
+      </div>`).join('')}
+    </div>
+  </div>`:''}
+  <div class="card" style="padding:16px;background:#faf7f3">
+    <div style="font-size:13px;font-weight:600;color:#444;margin-bottom:10px">快速操作</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" onclick="switchTab('pre')">📄 前期製作</button>
+      ${p.sheetsId
+        ?`<a class="btn green" href="https://docs.google.com/spreadsheets/d/${extractSheetsId(p.sheetsId)}/edit" target="_blank">✎ 開啟分鏡 Sheets</a>`
+        :`<button class="btn" onclick="openEditProj('${p.id}')">🔗 設定分鏡 Sheets</button>`}
+      ${p.sheetsId2
+        ?`<a class="btn green" href="https://docs.google.com/spreadsheets/d/${extractSheetsId(p.sheetsId2)}/edit" target="_blank">✎ 開啟修改意見 Sheets</a>`:''}
+      <button class="btn" onclick="switchTab('final')">🎬 完成影片</button>
+    </div>
+  </div>
+  <div class="card" style="background:#faf7f3;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:13px;font-weight:600;color:#444">📁 檔案位置</div>
+        <button onclick="toggleFileLocHelp()" style="background:none;border:1px solid #ddd;border-radius:50%;width:18px;height:18px;font-size:11px;color:#aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0" title="首次使用說明">?</button>
+      </div>
+      <button class="btn sm primary" onclick="openFileLocModal('${p.id}')">＋ 新增</button>
+    </div>
+    <div id="fileloc-help" style="display:none;margin:0 16px 12px;background:#fff8e8;border:1px solid #f0d060;border-radius:8px;padding:11px 14px;font-size:11px;color:#7a6010;line-height:1.8">
+      <strong>首次使用需在 Windows 登錄路徑安裝一次（約 30 秒）：</strong><br>
+      1. 將以下內容存成 <code style="background:#f5e88a;padding:1px 4px;border-radius:3px">openfileloc.reg</code> 並雙擊執行：<br>
+      <div style="margin:6px 0;position:relative">
+        <textarea id="reg-code" readonly style="width:100%;height:90px;font-size:10px;font-family:Consolas,monospace;background:#fffdf0;border:1px solid #e8d870;border-radius:4px;padding:6px;resize:none;color:#555">Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\openfileloc]
+@="Open File Location"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\openfileloc\shell\open\command]
+@="explorer.exe \"%1\""</textarea>
+        <button onclick="copyRegCode()" style="position:absolute;top:5px;right:6px;background:#f0d060;border:none;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;color:#5a4a00">複製</button>
+      </div>
+      2. 執行後重新整理此頁面，點擊路徑即可直接用 Explorer 開啟資料夾。<br>
+      <span style="color:#aaa">（UNC 路徑 \\\\server\\... 同樣適用）</span>
+    </div>
+    ${(p.fileLocs&&p.fileLocs.length)?`
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:#f0ece6;border-bottom:1px solid #e0d8cc">
+            <th style="padding:7px 14px;text-align:left;font-weight:600;color:#666;font-size:11px;letter-spacing:.04em;width:calc(1/7*100%)">標題</th>
+            <th style="padding:7px 14px;text-align:left;font-weight:600;color:#666;font-size:11px;letter-spacing:.04em;width:calc(3/7*100%)">路徑</th>
+            <th style="padding:7px 14px;text-align:left;font-weight:600;color:#666;font-size:11px;letter-spacing:.04em;width:calc(3/7*100%)">備註</th>
+            <th style="padding:7px 8px;width:60px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${p.fileLocs.map((fl,i)=>`
+          <tr style="border-bottom:1px solid #ede8e0${i%2===0?';background:#fdf8f0':''}">
+            <td style="padding:8px 14px;color:#333;font-weight:500;font-size:13px;vertical-align:middle">${fl.title||'—'}</td>
+            <td style="padding:8px 14px;vertical-align:middle">
+              <a href="#" data-path="${fl.path||''}" onclick="openLocalPath(this.dataset.path);return false;" style="font-size:12px;color:#1a6abf;word-break:break-all;font-family:'Consolas','Menlo',monospace">${fl.path||'—'}</a>
+            </td>
+            <td style="padding:8px 14px;font-size:12px;color:#888;vertical-align:middle">${fl.note||''}</td>
+            <td style="padding:8px 8px;white-space:nowrap;vertical-align:middle">
+              <button class="btn sm" onclick="editFileLoc('${p.id}',${i})" style="margin-right:3px">✎</button>
+              <button class="btn sm danger" onclick="deleteFileLoc('${p.id}',${i})">✕</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`:`<div class="empty" style="padding:22px;font-size:12px;color:#ccc">尚無檔案位置，點擊「＋ 新增」加入</div>`}
+  </div>`;
+}
+
+// ── Pre-production ──
+function renderPre(p) {
+  const scripts = p.scripts||[];
+  const refs    = p.refs||[];
+  const allTypes = [...new Set(refs.map(r=>r.type||'link'))];
+  return `
+  <div class="sec-hd">
+    <span class="sec-title">📄 完成腳本</span>
+    <button class="btn primary" onclick="openItemModal('script','${p.id}')">＋ 新增腳本</button>
+  </div>
+  <div class="media-grid">
+    ${scripts.length ? scripts.map((s,i)=>mediaCard(s,i,p.id,'scripts')).join('')
+      : `<div class="card" style="grid-column:1/-1"><div class="empty">尚無腳本，點擊「新增腳本」加入</div></div>`}
+  </div>
+  <div class="sec-hd" style="margin-top:8px">
+    <span class="sec-title">🔗 參考資料</span>
+    <button class="btn primary" onclick="openItemModal('ref','${p.id}')">＋ 新增參考</button>
+  </div>
+  ${refs.length ? renderRefsSorted(refs, p.id) : emptyCard('尚無參考資料')}
+`;
+}
+
+// ── Storyboard ──
+function renderStoryboard(p) {
+  const sid = extractSheetsId(p.sheetsId||'');
+  if (!sid) return `<div class="card"><div class="empty" style="padding:50px">
+    <div style="font-size:32px;margin-bottom:10px">📋</div>
+    <div style="margin-bottom:10px;color:#888">尚未設定 Google Sheets</div>
+    <button class="btn primary" onclick="openEditProj('${p.id}')">✎ 設定 Sheets 連結</button>
+  </div></div>`;
+  return `
+  <div class="sec-hd">
+    <span class="sec-title">📋 特效AI分鏡cut（Google Sheets）</span>
+    <button class="btn green" onclick="openSheetsWindow('https://docs.google.com/spreadsheets/d/${sid}/edit')">✎ 開啟編輯</button>
+  </div>
+  <div class="notice">分鏡腳本建議直接在 Google Sheets 操作（支援插圖、格子編輯）。以下為唯讀預覽。</div>
+  <div class="card" style="overflow:hidden">
+    <iframe class="sheets-frame" src="https://docs.google.com/spreadsheets/d/${sid}/preview?rm=minimal" loading="lazy"></iframe>
+  </div>`;
+}
+
+// ── Revision ──
+function renderRevision(p) {
+  const sid = extractSheetsId(p.sheetsId2||p.sheetsId||'');
+  if (!sid) return `<div class="card"><div class="empty" style="padding:50px">
+    <div style="font-size:32px;margin-bottom:10px">💬</div>
+    <div style="margin-bottom:10px;color:#888">尚未設定修改意見 Sheets</div>
+    <button class="btn primary" onclick="openEditProj('${p.id}')">✎ 設定 Sheets 連結</button>
+  </div></div>`;
+  return `
+  <div class="sec-hd">
+    <span class="sec-title">💬 修改意見（Google Sheets）</span>
+    <button class="btn green" onclick="openSheetsWindow('https://docs.google.com/spreadsheets/d/${sid}/edit')">✎ 開啟編輯</button>
+  </div>
+  <div class="notice">修改意見在 Google Sheets 中操作。以下為即時唯讀預覽。</div>
+  <div class="card" style="overflow:hidden">
+    <iframe class="sheets-frame" src="https://docs.google.com/spreadsheets/d/${sid}/preview?rm=minimal" loading="lazy"></iframe>
+  </div>`;
+}
+
+// ── Final ──
+function renderFinal(p) {
+  const finals = p.finals||[];
+  return `
+  <div class="sec-hd">
+    <span class="sec-title">🎬 完成影片</span>
+    <button class="btn primary" onclick="openItemModal('final','${p.id}')">＋ 新增影片</button>
+  </div>
+  <div class="media-grid">
+    ${finals.length ? finals.map((f,i)=>mediaCard(f,i,p.id,'finals')).join('')
+      : `<div class="card" style="grid-column:1/-1"><div class="empty">尚無完成影片</div></div>`}
+  </div>`;
+}
+
+// ── Project CRUD ──
+window.openNewProj = function() {
+  window._editProjId = null;
+  document.getElementById('proj-mtitle').textContent = '新增專案';
+  ['pm-name','pm-client','pm-sheets','pm-sheets2','pm-note'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('pm-stage').value='pre';
+  document.getElementById('proj-overlay').classList.add('open');
+}
+window.openEditProj = function(pid) {
+  window._editProjId = pid;
+  const p = window.projects[pid];
+  document.getElementById('proj-mtitle').textContent = '編輯專案';
+  document.getElementById('pm-name').value    = p.name||'';
+  document.getElementById('pm-client').value  = p.client||'';
+  document.getElementById('pm-stage').value   = p.stage||'pre';
+  document.getElementById('pm-sheets').value  = p.sheetsId||'';
+  document.getElementById('pm-sheets2').value = p.sheetsId2||'';
+  document.getElementById('pm-note').value    = p.note||'';
+  document.getElementById('proj-overlay').classList.add('open');
+}
+window.closeProjModal = function() { document.getElementById('proj-overlay').classList.remove('open'); }
+window.saveProj = async function() {
+  const name = document.getElementById('pm-name').value.trim();
+  if (!name) { alert('請填寫專案名稱'); return; }
+  const id = window._editProjId || genId();
+  const ex = window.projects[id]||{};
+  const p  = {...ex, id, name,
+    client:    document.getElementById('pm-client').value.trim(),
+    stage:     document.getElementById('pm-stage').value,
+    sheetsId:  extractSheetsId(document.getElementById('pm-sheets').value.trim()),
+    sheetsId2: extractSheetsId(document.getElementById('pm-sheets2').value.trim()),
+    note:      document.getElementById('pm-note').value.trim(),
+    createdAt: ex.createdAt||Date.now(),
+    scripts:ex.scripts||[], refs:ex.refs||[],
+    shots:ex.shots||[], revisions:ex.revisions||[], finals:ex.finals||[],
+    fileLocs:ex.fileLocs||[],
+  };
+  window.projects[id] = p;
+  await persist(id, p);
+  window.currentProjId = id;
+  window.currentTab    = 'overview';
+  closeProjModal();
+  renderSidebar();
+  renderProject(p);
+}
+window.deleteProj = async function(pid) {
+  if (!confirm('確定刪除此專案？')) return;
+  await remove(ref(db,'projects/'+pid));
+  delete window.projects[pid];
+  window.currentProjId = null;
+  renderSidebar();
+  document.getElementById('main').innerHTML=`<div class="empty-state"><p>請從左側選擇專案</p></div>`;
+}
+
+// ── Item CRUD ──
+window.openItemModal = function(type, pid) {
+  window.addCtx  = {type,pid};
+  window._editIdx = null;
+  const titles = {script:'新增完成腳本',ref:'新增參考資料',final:'新增完成影片'};
+  document.getElementById('item-mtitle').textContent = titles[type]||'新增';
+  const body = document.getElementById('item-mbody');
+
+  if (type==='script') {
+    body.innerHTML=`
+      <div class="fg"><label>標題 *</label><input id="ii-title" placeholder="例：main VCR"></div>
+      <div class="fg"><label>Google Slides 連結 *</label><input id="ii-url" placeholder="https://docs.google.com/presentation/d/..."></div>`;
+  }
+  else if (type==='ref') {
+    body.innerHTML=`
+      <div class="fg"><label>標題 *</label><input id="ii-title" placeholder="例：腳本發想"></div>
+      <div class="fg"><label>連結 *</label><input id="ii-url" placeholder="貼上連結"></div>
+      <div class="fg2">
+        <div class="fg"><label>類型</label>
+          <select id="ii-type" onchange="onTypeChange(this)">
+            <option value="youtube">YouTube 影片</option>
+            <option value="drive">Google Drive 影片/檔案</option>
+            <option value="image">圖片（Drive 或直連）</option>
+            <option value="slides">Google Slides</option>
+            <option value="facebook">Facebook</option>
+            <option value="instagram">Instagram</option>
+            <option value="threads">Threads</option>
+            <option value="embed">嵌入代碼（FB/IG/Threads embed src）</option>
+            <option value="link">一般連結</option>
+          </select>
+        </div>
+        <div class="fg"><label>影片方向</label>
+          <select id="ii-orient"><option value="landscape">橫式 16:9</option><option value="portrait">直式 9:16</option></select>
+        </div>
+      </div>
+      <div id="embed-hint" style="display:none"></div>
+      <div class="fg"><label>備註</label><input id="ii-note" placeholder="分類或說明"></div>`;
+  }
+  else if (type==='final') {
+    body.innerHTML=`
+      <div class="fg"><label>標題 *</label><input id="ii-title" placeholder="例：20260408_v7"></div>
+      <div class="fg"><label>連結 *</label><input id="ii-url" placeholder="YouTube / Google Drive / Facebook 連結"></div>
+      <div class="fg2">
+        <div class="fg"><label>類型</label>
+          <select id="ii-type">
+            <option value="youtube">YouTube</option>
+            <option value="drive">Google Drive</option>
+            <option value="facebook">Facebook</option>
+            <option value="embed">嵌入代碼（embed src URL）</option>
+          </select>
+        </div>
+        <div class="fg"><label>影片方向</label>
+          <select id="ii-orient"><option value="landscape">橫式 16:9</option><option value="portrait">直式 9:16</option></select>
+        </div>
+      </div>`;
+  }
+  document.getElementById('item-overlay').classList.add('open');
+}
+window.onTypeChange = function(sel) {
+  const hint = document.getElementById('embed-hint');
+  if (!hint) return;
+  if (sel.value === 'embed') {
+    hint.style.display = 'block';
+    hint.innerHTML = `<div style="background:#fff8e8;border:1px solid #f0d060;border-radius:6px;padding:10px;font-size:11px;color:#7a6010;line-height:1.6">
+      <strong>如何取得嵌入 src：</strong><br>
+      • <strong>Facebook</strong>：貼文右上角 ⋯ → 嵌入 → 複製 iframe 中 src="..." 的網址<br>
+      • <strong>Instagram</strong>：貼文 ⋯ → 嵌入 → 複製 iframe src<br>
+      • <strong>Threads</strong>：貼文 ⋯ → 嵌入 → 複製 iframe src<br>
+      然後把 src 網址貼到上方「連結」欄位
+    </div>`;
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+window.closeItemModal = function() {
+  document.getElementById('item-overlay').classList.remove('open');
+  window._editIdx = null;
+}
+window.saveItem = async function() {
+  const {type,pid} = window.addCtx;
+  const p = window.projects[pid]; if(!p) return;
+  const v = id => { const el=document.getElementById(id); return el?el.value.trim():''; };
+  const arrMap = {script:'scripts',ref:'refs',final:'finals'};
+  const arr = arrMap[type]; if(!arr) return;
+  let item;
+  if (type==='script') {
+    if(!v('ii-title')||!v('ii-url')){alert('請填寫標題與連結');return;}
+    item={title:v('ii-title'),url:v('ii-url'),type:'slides'};
+  } else if (type==='ref') {
+    if(!v('ii-title')||!v('ii-url')){alert('請填寫標題與連結');return;}
+    item={title:v('ii-title'),url:v('ii-url'),type:v('ii-type')||'youtube',orient:v('ii-orient')||'landscape',note:v('ii-note')};
+  } else if (type==='final') {
+    if(!v('ii-title')||!v('ii-url')){alert('請填寫標題與連結');return;}
+    item={title:v('ii-title'),url:v('ii-url'),type:v('ii-type')||'youtube',orient:v('ii-orient')||'landscape'};
+  }
+  if(!item) return;
+  p[arr]=p[arr]||[];
+  if (window._editIdx!==null) p[arr][window._editIdx]=item;
+  else p[arr].push(item);
+  await persist(pid,p);
+  closeItemModal();
+  renderTab();
+}
+window.editSubItem = function(pid,arr,idx) {
+  const p=window.projects[pid]; if(!p) return;
+  const item=p[arr][idx];
+  const typeMap={scripts:'script',refs:'ref',finals:'final'};
+  openItemModal(typeMap[arr]||arr,pid);
+  window._editIdx=idx;
+  setTimeout(()=>{
+    const s=(id,val)=>{const el=document.getElementById(id);if(el&&val!=null)el.value=val;};
+    s('ii-title',item.title); s('ii-url',item.url);
+    s('ii-type',item.type); s('ii-orient',item.orient||item.orientation||'landscape');
+    s('ii-note',item.note);
+  },40);
+}
+window.deleteSubItem = async function(pid,arr,idx) {
+  if(!confirm('確定刪除？')) return;
+  const p=window.projects[pid]; if(!p) return;
+  p[arr].splice(idx,1);
+  await persist(pid,p);
+  renderTab();
+}
+
+// One-time cleanup: remove last corrupted item from _AI project refs
+window.cleanupCorrupted = async function() {
+  const aiProj = Object.values(window.projects).find(p => p.name && p.name.includes('AI'));
+  if (!aiProj) { alert('找不到 AI 專案'); return; }
+  if (!aiProj.refs || aiProj.refs.length === 0) { alert('refs 已空'); return; }
+  if (confirm('確定刪除最後一筆參考資料？')) {
+    aiProj.refs.pop();
+    await persist(aiProj.id, aiProj);
+    alert('已刪除！');
+    renderTab();
+  }
+}
+
+window.toggleFileLocHelp = function() {
+  const el = document.getElementById('fileloc-help');
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+window.copyRegCode = function() {
+  const ta = document.getElementById('reg-code');
+  if (!ta) return;
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const btn = ta.nextElementSibling;
+    if (btn) { btn.textContent = '✓ 已複製'; setTimeout(() => btn.textContent = '複製', 1500); }
+  });
+}
+
+// ── Open Sheets in side panel ──
+window.openSheetsWindow = function(url) {
+  const panel = document.getElementById('sheets-panel')
+  const overlay = document.getElementById('sheets-panel-overlay')
+  const iframe = document.getElementById('sheets-panel-iframe')
+  const extlink = document.getElementById('sheets-panel-extlink')
+  const title = document.getElementById('sheets-panel-title')
+  iframe.src = url
+  extlink.href = url
+  extlink.onclick = function(e) { e.preventDefault(); if(window.electronAPI&&window.electronAPI.openWindow) window.electronAPI.openWindow(url); else window.open(url,'_blank'); }
+  title.textContent = 'Google Sheets'
+  panel.classList.add('open')
+  overlay.classList.add('open')
+}
+window.closeSheetsPanel = function() {
+  document.getElementById('sheets-panel').classList.remove('open')
+  document.getElementById('sheets-panel-overlay').classList.remove('open')
+  document.getElementById('sheets-panel-iframe').src = 'about:blank'
+}
+
+// ── File Location CRUD ──
+window._editFileLocIdx = null;
+window._fileLocPid = null;
+
+window.openFileLocModal = function(pid, idx) {
+  window._fileLocPid = pid;
+  window._editFileLocIdx = (idx !== undefined) ? idx : null;
+  if (idx !== undefined) {
+    const p = window.projects[pid];
+    const fl = p.fileLocs[idx];
+    document.getElementById('fl-mtitle').textContent = '編輯檔案位置';
+    document.getElementById('fl-title').value = fl.title||'';
+    document.getElementById('fl-path').value  = fl.path||'';
+    document.getElementById('fl-note').value  = fl.note||'';
+  } else {
+    document.getElementById('fl-mtitle').textContent = '新增檔案位置';
+    ['fl-title','fl-path','fl-note'].forEach(id => document.getElementById(id).value = '');
+  }
+  document.getElementById('fileloc-overlay').classList.add('open');
+}
+window.closeFileLocModal = function() {
+  document.getElementById('fileloc-overlay').classList.remove('open');
+}
+window.saveFileLoc = async function() {
+  const pid = window._fileLocPid;
+  const p = window.projects[pid]; if (!p) return;
+  const title = document.getElementById('fl-title').value.trim();
+  const path  = document.getElementById('fl-path').value.trim();
+  const note  = document.getElementById('fl-note').value.trim();
+  if (!title || !path) { alert('請填寫標題與路徑'); return; }
+  p.fileLocs = p.fileLocs || [];
+  const item = {title, path, note};
+  if (window._editFileLocIdx !== null) p.fileLocs[window._editFileLocIdx] = item;
+  else p.fileLocs.push(item);
+  await persist(pid, p);
+  closeFileLocModal();
+  renderTab();
+}
+window.editFileLoc = function(pid, idx) { openFileLocModal(pid, idx); }
+window.deleteFileLoc = async function(pid, idx) {
+  if (!confirm('確定刪除此檔案位置？')) return;
+  const p = window.projects[pid]; if (!p) return;
+  p.fileLocs.splice(idx, 1);
+  await persist(pid, p);
+  renderTab();
+}
+window.openLocalPath = function(path) {
+  if (!path) return;
+  // Strip control characters
+  var cleanPath = path.replace(/[\x00-\x1F]/g, "");
+  // Fix double-escaped backslashes stored in Firebase (\\server -> \\server)
+  cleanPath = cleanPath.replace(/\\\\/g, "\\");
+  if (window.electronAPI && window.electronAPI.openPath) {
+    window.electronAPI.openPath(cleanPath).then(function(result) {
+      if (!result.success && result.error) {
+        alert("無法開啟路徑：" + result.error);
+      }
+    });
+    return;
+  }
+  navigator.clipboard.writeText(cleanPath).then(function() {
+    alert("路徑已複製到剪貼簿：\n" + cleanPath + "\n\n請貼到 Explorer 網址列開啟");
+  });
+}
+
+// ── Sidebar toggle ──
+window.toggleSidebar = function() {
+  const sb=document.getElementById('sidebar');
+  const btn=document.getElementById('sb-toggle');
+  sb.classList.toggle('col');
+  btn.textContent = sb.classList.contains('col') ? '▶' : '◀';
+}
+
+// ── Backup / Restore ──
+window.exportJSON = function() {
+  const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),projects:window.projects},null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`frame_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+window.importJSON = function(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    try {
+      const data=JSON.parse(ev.target.result);
+      const imp=data.projects||data;
+      if(confirm('確定匯入備份？目前資料將被覆蓋。')) {
+        for(const [id,proj] of Object.entries(imp)) await persist(id,proj);
+        alert('匯入成功！');
+      }
+    } catch(e){alert('檔案格式錯誤');}
+  };
+  reader.readAsText(file);
+}
+
+// ── Modal backdrop ──
+document.getElementById('proj-overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeProjModal();});
+document.getElementById('item-overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeItemModal();});
+document.getElementById('fileloc-overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeFileLocModal();});
+</script>
+
+<!-- Sheets Side Panel -->
+<div id="sheets-panel-overlay" onclick="closeSheetsPanel()"></div>
+<div id="sheets-panel">
+  <div id="sheets-panel-bar">
+    <span id="sheets-panel-title">Google Sheets</span>
+    <div style="display:flex;gap:8px">
+      <a id="sheets-panel-extlink" href="#" target="_blank" style="color:#adf;font-size:12px;text-decoration:none" onclick="return false">↗ 在瀏覽器開啟</a>
+      <button onclick="closeSheetsPanel()" style="background:none;border:1px solid #555;color:#fff;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:12px">✕ 關閉</button>
+    </div>
+  </div>
+  <iframe id="sheets-panel-iframe" src="about:blank" allowfullscreen></iframe>
+</div>
+</body>
+</html>
