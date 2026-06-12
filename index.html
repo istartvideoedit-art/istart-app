@@ -587,6 +587,40 @@ function mediaCard9x16(item, i, pid, arr) {
 }
 
 function mediaCard(item, i, pid, arr) {
+  // If cover image is set, show it instead of embed
+  if (item.cover && item.cover.trim()) {
+    const coverUrl = item.cover.trim();
+    // Convert Google Drive share link to direct image link
+    let imgSrc = coverUrl;
+    const driveMatch = coverUrl.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+    if (driveMatch) {
+      imgSrc = `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
+    }
+    const info = badgeInfo(item.type || 'link');
+    const shortUrl = (item.url||'').length>50 ? item.url.slice(0,50)+'…' : (item.url||'');
+    return `<div class="mc">
+      <div class="mc-body">
+        <a href="${item.url||'#'}" target="_blank" style="display:block;position:relative;width:100%;padding-bottom:56.25%;overflow:hidden;background:#000">
+          <img src="${imgSrc}" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">
+          <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px">▶</div>
+        </a>
+      </div>
+      <div class="mc-head">
+        <div class="mc-title">${item.title||'（未命名）'}</div>
+        <div class="mc-meta">
+          <a class="mc-url" href="${item.url||'#'}" target="_blank">${shortUrl}</a>
+          ${item.note?`<span class="mc-note">${item.note}</span>`:''}
+          <span class="mc-badge ${info.cls}">${info.label}</span>
+        </div>
+        <div class="mc-actions">
+          <a href="${item.url||'#'}" target="_blank" class="btn sm">↗</a>
+          <button class="btn sm" onclick="editSubItem('${pid}','${arr}',${i})">✎</button>
+          <button class="btn sm danger" onclick="deleteSubItem('${pid}','${arr}',${i})">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
   // Safety: if item is malformed, show minimal delete card
   if (!item || typeof item !== 'object') {
     return `<div class="mc">
@@ -990,7 +1024,8 @@ window.openItemModal = function(type, pid) {
         </div>
       </div>
       <div id="embed-hint" style="display:none"></div>
-      <div class="fg"><label>備註</label><input id="ii-note" placeholder="分類或說明"></div>`;
+      <div class="fg"><label>備註</label><input id="ii-note" placeholder="分類或說明"></div>
+      <div class="fg"><label>封面圖網址</label><input id="ii-cover" placeholder="貼上 Imgur 或 Google Drive 圖片連結（選填）"></div>`;
   }
   else if (type==='final') {
     body.innerHTML=`
@@ -1045,7 +1080,7 @@ window.saveItem = async function() {
     item={title:v('ii-title'),url:v('ii-url'),type:'slides'};
   } else if (type==='ref') {
     if(!v('ii-title')||!v('ii-url')){alert('請填寫標題與連結');return;}
-    item={title:v('ii-title'),url:v('ii-url'),type:v('ii-type')||'youtube',orient:v('ii-orient')||'landscape',note:v('ii-note')};
+    item={title:v('ii-title'),url:v('ii-url'),type:v('ii-type')||'youtube',orient:v('ii-orient')||'landscape',note:v('ii-note'),cover:v('ii-cover')||''};
   } else if (type==='final') {
     if(!v('ii-title')||!v('ii-url')){alert('請填寫標題與連結');return;}
     item={title:v('ii-title'),url:v('ii-url'),type:v('ii-type')||'youtube',orient:v('ii-orient')||'landscape'};
@@ -1068,7 +1103,7 @@ window.editSubItem = function(pid,arr,idx) {
     const s=(id,val)=>{const el=document.getElementById(id);if(el&&val!=null)el.value=val;};
     s('ii-title',item.title); s('ii-url',item.url);
     s('ii-type',item.type); s('ii-orient',item.orient||item.orientation||'landscape');
-    s('ii-note',item.note);
+    s('ii-note',item.note); s('ii-cover',item.cover||'');
   },40);
 }
 window.deleteSubItem = async function(pid,arr,idx) {
